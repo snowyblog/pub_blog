@@ -2,9 +2,10 @@
 // Base.astro — 全站页面外壳（左侧栏 + 右侧内容）
 import "../styles/global.css";
 import { Menu, X, Rss, Sun, Moon } from "@lucide/astro";
+import CodeBlockEnhancer from "../components/CodeBlockEnhancer.astro";
 
-const title = Astro.props.title ?? "Blog";
-const description = Astro.props.description ?? "一个极简博客";
+const title = Astro.props.title ?? "雪的日记";
+const description = Astro.props.description ?? "雪的日记";
 ---
 
 <!doctype html>
@@ -13,6 +14,12 @@ const description = Astro.props.description ?? "一个极简博客";
     <meta charset="utf-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="icon" href="/favicon.ico" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap"
+    />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="generator" content={Astro.generator} />
     <title>{title}</title>
@@ -49,7 +56,13 @@ const description = Astro.props.description ?? "一个极简博客";
       <div class="layout">
         <!-- 左侧栏：桌面端可见，窄屏隐藏 -->
         <aside class="sidebar">
-          <a href="/" class="site-title">Blog</a>
+          <div class="sidebar-top">
+            <a href="/" class="site-title">雪的日记</a>
+            <button class="theme-toggle" id="theme-toggle-sidebar" aria-label="切换深色模式">
+              <span class="icon-light"><Sun size={18} /></span>
+              <span class="icon-dark"><Moon size={18} /></span>
+            </button>
+          </div>
           <slot name="sidebar">
             <!-- 默认导航，文章页可替换为 TOC -->
             <nav class="sidebar-nav">
@@ -57,17 +70,13 @@ const description = Astro.props.description ?? "一个极简博客";
               <a href="/rss.xml">RSS</a>
             </nav>
           </slot>
-          <button class="theme-toggle" id="theme-toggle-sidebar" aria-label="切换深色模式">
-            <span class="icon-light"><Sun size={18} /></span>
-            <span class="icon-dark"><Moon size={18} /></span>
-          </button>
         </aside>
 
         <!-- 右侧主内容区 -->
         <main class="main-content">
           <!-- 窄屏顶部导航条（仅窄屏显示） -->
           <header class="mobile-topbar">
-            <a href="/" class="site-title">Blog</a>
+            <a href="/" class="site-title">雪的日记</a>
             <div class="topbar-actions">
               <button class="theme-toggle" id="theme-toggle-mobile" aria-label="切换深色模式">
                 <span class="icon-light"><Sun size={18} /></span>
@@ -83,6 +92,7 @@ const description = Astro.props.description ?? "一个极简博客";
         </main>
       </div>
     </div>
+    <CodeBlockEnhancer />
   </body>
 </html>
 
@@ -259,9 +269,6 @@ const description = Astro.props.description ?? "一个极简博客";
   :root[data-theme="dark"] .theme-toggle .icon-dark {
     display: inline;
   }
-  .sidebar .theme-toggle {
-    margin-top: 1rem;
-  }
   .topbar-actions {
     display: flex;
     align-items: center;
@@ -285,13 +292,23 @@ const description = Astro.props.description ?? "一个极简博客";
     align-self: flex-start;
   }
 
+  .sidebar-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1rem;
+  }
+
+  .sidebar-top .theme-toggle {
+    padding: 0;
+  }
+
   .site-title {
     font-weight: 700;
     font-size: 1.15rem;
     border-bottom: none;
     color: var(--color-text);
     display: block;
-    margin-bottom: 1rem;
   }
   .site-title:hover {
     color: var(--color-accent);

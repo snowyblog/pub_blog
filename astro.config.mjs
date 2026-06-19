@@ -1,5 +1,5 @@
 // @ts-check
-import { defineConfig } from "astro/config";
+import { defineConfig, sessionDrivers } from "astro/config";
 import mdx from "@astrojs/mdx";
 import sitemap from "@astrojs/sitemap";
 import cloudflare from "@astrojs/cloudflare";
@@ -16,8 +16,12 @@ export default defineConfig({
     // 图片在构建时预处理，不依赖 CF Images 绑定
     imageService: "compile",
   }),
+  // 用 LRU 内存驱动占位，避免适配器自动添加 KV 绑定
+  session: {
+    driver: sessionDrivers.lruCache(),
+  },
   // 部署后替换为你的 CF Pages 域名
-  site: "https://pub-blog.pages.dev",
+  site: "https://blog.snowptr.top",
   integrations: [mdx({
     syntaxHighlight: "shiki",
     shikiConfig: {

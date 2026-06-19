@@ -1,19 +1,67 @@
-/* === 全局样式 — 极简文字风 === */
+/* === 全局样式 - 极简文字风 === */
 
-/* CSS 变量：后续暗色模式只需覆盖这些值 */
+/* 主题变量 */
 :root {
+  color-scheme: light;
   --color-bg: #f6f6f6;
   --color-text: #1a1a1a;
   --color-muted: #6b6b6b;
   --color-accent: #2563eb;
   --color-border: #e5e5e5;
   --color-code-bg: #f5f5f5;
-  --font-sans: "Segoe UI", "PingFang SC", "Microsoft YaHei", system-ui, -apple-system, sans-serif;
-  --font-mono: "Cascadia Code", "Fira Code", "JetBrains Mono", Consolas, monospace;
+  --color-code-header-bg: #eef2f7;
+  --color-code-header-border: #d8e0ea;
+  --color-code-line-number: #94a3b8;
+  --color-code-copy-bg: rgba(255, 255, 255, 0.82);
+  --color-code-copy-border: rgba(148, 163, 184, 0.28);
+  --scrollbar-track: rgba(148, 163, 184, 0.12);
+  --scrollbar-thumb: rgba(100, 116, 139, 0.55);
+  --scrollbar-thumb-hover: rgba(71, 85, 105, 0.7);
+  --font-sans: "IBM Plex Sans", "PingFang SC", "Microsoft YaHei", "Noto Sans SC", sans-serif;
+  --font-mono: "JetBrains Mono", "Cascadia Code", "Fira Code", Consolas, monospace;
   --max-width: 720px;
   --sidebar-width: 200px;
   --content-max-width: 800px;
   --line-height: 1.75;
+}
+
+/* 深色变量 */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) {
+    color-scheme: dark;
+    --color-bg: #1a1a1a;
+    --color-text: #e8e8e8;
+    --color-muted: #9a9a9a;
+    --color-accent: #60a5fa;
+    --color-border: #333;
+    --color-code-bg: #0d1117;
+    --color-code-header-bg: #161b22;
+    --color-code-header-border: #30363d;
+    --color-code-line-number: #6e7681;
+    --color-code-copy-bg: rgba(22, 27, 34, 0.9);
+    --color-code-copy-border: rgba(110, 118, 129, 0.3);
+    --scrollbar-track: rgba(30, 41, 59, 0.5);
+    --scrollbar-thumb: rgba(148, 163, 184, 0.5);
+    --scrollbar-thumb-hover: rgba(148, 163, 184, 0.68);
+  }
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --color-bg: #1a1a1a;
+  --color-text: #e8e8e8;
+  --color-muted: #9a9a9a;
+  --color-accent: #60a5fa;
+  --color-border: #333;
+  --color-code-bg: #0d1117;
+  --color-code-header-bg: #161b22;
+  --color-code-header-border: #30363d;
+  --color-code-line-number: #6e7681;
+  --color-code-copy-bg: rgba(22, 27, 34, 0.9);
+  --color-code-copy-border: rgba(110, 118, 129, 0.3);
+  --scrollbar-track: rgba(30, 41, 59, 0.5);
+  --scrollbar-thumb: rgba(148, 163, 184, 0.5);
+  --scrollbar-thumb-hover: rgba(148, 163, 184, 0.68);
 }
 
 /* 基础重置 */
@@ -26,8 +74,37 @@
 }
 
 html {
+  scrollbar-width: thin;
+  scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
+  overflow-y: auto;
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--scrollbar-track);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb);
+  border-radius: 999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--scrollbar-thumb-hover);
+}
+
+::-webkit-scrollbar-thumb:active {
+  background: var(--scrollbar-thumb-hover);
+}
+
+html {
   font-size: 17px;
   -webkit-font-smoothing: antialiased;
+  scrollbar-gutter: stable;
 }
 
 body {
@@ -35,42 +112,34 @@ body {
   line-height: var(--line-height);
   color: var(--color-text);
   background: var(--color-bg);
+  text-rendering: optimizeLegibility;
   transition: background-color 0.2s ease, color 0.2s ease;
 }
 
-/* 系统深色模式（仅在无手动偏好时生效） */
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme]) {
-    --color-bg: #1a1a1a;
-    --color-text: #e8e8e8;
-    --color-muted: #9a9a9a;
-    --color-accent: #60a5fa;
-    --color-border: #333;
-    --color-code-bg: #2a2a2a;
-  }
-}
-
-/* 手动深色模式 */
-:root[data-theme="dark"] {
-  --color-bg: #1a1a1a;
-  --color-text: #e8e8e8;
-  --color-muted: #9a9a9a;
-  --color-accent: #60a5fa;
-  --color-border: #333;
-  --color-code-bg: #2a2a2a;
-}
-
 /* 排版 */
-h1, h2, h3, h4, h5, h6 {
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
   font-weight: 600;
   line-height: 1.3;
   margin-top: 1.8em;
   margin-bottom: 0.4em;
 }
 
-h1 { font-size: 1.6rem; }
-h2 { font-size: 1.4rem; }
-h3 { font-size: 1.15rem; }
+h1 {
+  font-size: 1.6rem;
+}
+
+h2 {
+  font-size: 1.4rem;
+}
+
+h3 {
+  font-size: 1.15rem;
+}
 
 p {
   margin-bottom: 1.2em;
@@ -87,21 +156,23 @@ a:hover {
   border-bottom-color: var(--color-accent);
 }
 
-/* 文章日期、标签等辅助信息 */
+/* 文章辅助信息 */
 .meta {
   font-size: 0.9rem;
   color: var(--color-muted);
 }
 
-/* 代码块 */
+/* 行内代码 */
 code {
   font-family: var(--font-mono);
   font-size: 0.88em;
   background: var(--color-code-bg);
   padding: 0.15em 0.35em;
   border-radius: 3px;
+  font-variant-ligatures: none;
 }
 
+/* 普通预格式文本 */
 pre {
   background: var(--color-code-bg);
   padding: 1rem 1.2rem;
@@ -116,6 +187,124 @@ pre code {
   background: none;
   padding: 0;
   border-radius: 0;
+}
+
+/* Shiki 代码块外壳 */
+.code-block {
+  margin: 1.2em 0;
+  border: 1px solid var(--color-code-header-border);
+  border-radius: 8px;
+  overflow: hidden;
+  background: var(--color-code-bg);
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.05);
+}
+
+.code-block__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.3rem 0.75rem;
+  background: var(--color-code-header-bg);
+  border-bottom: 1px solid var(--color-code-header-border);
+}
+
+.code-block__language {
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  color: var(--color-muted);
+}
+
+.code-block__copy {
+  appearance: none;
+  border: none;
+  border-radius: 0;
+  background: none;
+  color: var(--color-muted);
+  font: inherit;
+  font-size: 0.8rem;
+  line-height: 1;
+  padding: 0;
+  cursor: pointer;
+  transition: color 0.2s ease;
+  white-space: nowrap;
+}
+
+.code-block__copy:hover {
+  color: var(--color-accent);
+}
+
+.code-block__copy[data-state="copied"] {
+  color: #0f766e;
+}
+
+:root[data-theme="dark"] .code-block__copy[data-state="copied"] {
+  color: #34d399;
+}
+
+.code-block__copy[data-state="error"] {
+  color: #b91c1c;
+}
+
+:root[data-theme="dark"] .code-block__copy[data-state="error"] {
+  color: #f87171;
+}
+
+pre.astro-code {
+  margin: 0;
+  padding: 0.5rem 0;
+  border-radius: 0;
+  border: 0;
+  background: var(--color-code-bg);
+  font-family: var(--font-mono);
+  font-size: 0.88rem;
+  line-height: 1.5;
+  counter-reset: line;
+}
+
+pre.astro-code code {
+  display: flex;
+  flex-direction: column;
+  min-width: 100%;
+}
+
+pre.astro-code .line {
+  padding: 0 0.5rem 0 2rem;
+  position: relative;
+  counter-increment: line;
+  line-height: 1.5;
+}
+
+pre.astro-code .line::before {
+  content: counter(line);
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 1.6rem;
+  color: var(--color-code-line-number);
+  text-align: right;
+  user-select: none;
+}
+
+/* 让 Shiki 的暗色变量真正接管代码块 */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) .astro-code,
+  :root:not([data-theme]) .astro-code span {
+    color: var(--shiki-dark) !important;
+    background-color: var(--shiki-dark-bg) !important;
+    font-style: var(--shiki-dark-font-style) !important;
+    font-weight: var(--shiki-dark-font-weight) !important;
+    text-decoration: var(--shiki-dark-text-decoration) !important;
+  }
+}
+
+:root[data-theme="dark"] .astro-code,
+:root[data-theme="dark"] .astro-code span {
+  color: var(--shiki-dark) !important;
+  background-color: var(--shiki-dark-bg) !important;
+  font-style: var(--shiki-dark-font-style) !important;
+  font-weight: var(--shiki-dark-font-weight) !important;
+  text-decoration: var(--shiki-dark-text-decoration) !important;
 }
 
 /* 引用 */
@@ -141,7 +330,8 @@ hr {
 }
 
 /* 列表 */
-ul, ol {
+ul,
+ol {
   padding-left: 1.5rem;
   margin-bottom: 1em;
 }
@@ -157,7 +347,8 @@ table {
   margin: 1.2em 0;
 }
 
-th, td {
+th,
+td {
   border: 1px solid var(--color-border);
   padding: 0.5rem 0.75rem;
   text-align: left;
