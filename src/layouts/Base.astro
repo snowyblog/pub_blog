@@ -1,62 +1,357 @@
 ---
-// Base.astro — 全站页面外壳
-// 每个页面使用此布局时，内容会插入 <slot />
+// Base.astro — 全站页面外壳（左侧栏 + 右侧内容）
 import "../styles/global.css";
+import { Menu, X, Rss, Sun, Moon } from "@lucide/astro";
+
+const title = Astro.props.title ?? "Blog";
+const description = Astro.props.description ?? "一个极简博客";
 ---
 
-<!DOCTYPE html>
+<!doctype html>
 <html lang="zh-CN">
   <head>
     <meta charset="utf-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="icon" href="/favicon.ico" />
-    <meta name="viewport" content="width=device-width" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="generator" content={Astro.generator} />
-    <!-- 页面标题 -->
-    <title>{Astro.props.title ?? "Blog"}</title>
-    <meta
-      name="description"
-      content={Astro.props.description ?? "一个极简博客"}
-    />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <script is:inline>
+      (function() {
+        var saved = localStorage.getItem('theme');
+        var prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        var theme = saved || (prefersDark ? 'dark' : 'light');
+        document.documentElement.setAttribute('data-theme', theme);
+        document.documentElement.classList.add(theme);
+      })();
+    </script>
   </head>
   <body>
-    <!-- 顶部导航 -->
-    <header>
-      <nav>
-        <a href="/" class="site-title">Blog</a>
-        <div class="nav-links">
-          <a href="/rss.xml">RSS</a>
-        </div>
-      </nav>
-    </header>
-    <main>
-      <slot />
-    </main>
+    <!-- 更多面板（桌面端隐藏，手机端从右侧滑入） -->
+    <div class="menu-panel" hidden>
+      <div class="menu-panel-inner">
+        <nav class="menu-nav">
+          <a href="/" class="menu-link">首页</a>
+          <a href="/rss.xml" class="menu-link">
+            <span>RSS 订阅</span>
+            <Rss size={16} />
+          </a>
+        </nav>
+      </div>
+    </div>
+
+    <!-- 遮罩层 -->
+    <div class="menu-overlay" id="menu-overlay" hidden></div>
+
+    <!-- 页面主体（菜单打开时向左平移 300px） -->
+    <div class="page-wrapper" id="page-wrapper">
+      <div class="layout">
+        <!-- 左侧栏：桌面端可见，窄屏隐藏 -->
+        <aside class="sidebar">
+          <a href="/" class="site-title">Blog</a>
+          <slot name="sidebar">
+            <!-- 默认导航，文章页可替换为 TOC -->
+            <nav class="sidebar-nav">
+              <a href="/">首页</a>
+              <a href="/rss.xml">RSS</a>
+            </nav>
+          </slot>
+          <button class="theme-toggle" id="theme-toggle-sidebar" aria-label="切换深色模式">
+            <span class="icon-light"><Sun size={18} /></span>
+            <span class="icon-dark"><Moon size={18} /></span>
+          </button>
+        </aside>
+
+        <!-- 右侧主内容区 -->
+        <main class="main-content">
+          <!-- 窄屏顶部导航条（仅窄屏显示） -->
+          <header class="mobile-topbar">
+            <a href="/" class="site-title">Blog</a>
+            <div class="topbar-actions">
+              <button class="theme-toggle" id="theme-toggle-mobile" aria-label="切换深色模式">
+                <span class="icon-light"><Sun size={18} /></span>
+                <span class="icon-dark"><Moon size={18} /></span>
+              </button>
+              <button class="menu-toggle" id="menu-toggle" aria-label="打开菜单">
+                <span class="icon-menu"><Menu size={22} /></span>
+                <span class="icon-close"><X size={22} /></span>
+              </button>
+            </div>
+          </header>
+          <slot />
+        </main>
+      </div>
+    </div>
   </body>
 </html>
 
+<script>
+  const toggle = document.getElementById("menu-toggle");
+  const overlay = document.getElementById("menu-overlay");
+
+  function isOpen() {
+    return document.body.classList.contains("menu-open");
+  }
+
+  toggle?.addEventListener("click", () => {
+    document.body.classList.toggle("menu-open");
+    const open = isOpen();
+    toggle.setAttribute("aria-label", open ? "关闭菜单" : "打开菜单");
+  });
+
+  overlay?.addEventListener("click", () => {
+    document.body.classList.remove("menu-open");
+    toggle?.setAttribute("aria-label", "打开菜单");
+  });
+
+  // ESC 关闭
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && isOpen()) {
+      document.body.classList.remove("menu-open");
+      toggle?.setAttribute("aria-label", "打开菜单");
+    }
+  });
+
+  // --- 主题切换 ---
+  function setTheme(theme) {
+    var html = document.documentElement;
+    html.setAttribute("data-theme", theme);
+    html.classList.remove("light", "dark");
+    html.classList.add(theme);
+    localStorage.setItem("theme", theme);
+  }
+
+  document.querySelectorAll(".theme-toggle").forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      var current = document.documentElement.getAttribute("data-theme");
+      var next = current === "dark" ? "light" : "dark";
+      setTheme(next);
+    });
+  });
+
+  window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", function (e) {
+    if (!localStorage.getItem("theme")) {
+      setTheme(e.matches ? "dark" : "light");
+    }
+  });
+</script>
+
 <style>
-  /* 导航样式 */
-  header {
-    margin-bottom: 2.5rem;
+  /* === 页面包裹器（平移容器） === */
+  .page-wrapper {
+    transition: transform 0.28s cubic-bezier(0.22, 0.61, 0.36, 1);
   }
-  nav {
+
+  /* === 菜单面板 === */
+  .menu-panel {
+    position: fixed;
+    top: 0;
+    right: 0;
+    width: 200px;
+    height: 100dvh;
+    background: var(--color-bg);
+    border-left: 1px solid var(--color-border);
+    transform: translateX(100%);
+    transition: transform 0.28s cubic-bezier(0.22, 0.61, 0.36, 1);
+    z-index: 1001;
+    /* 桌面端不显示 */
+    display: none;
+  }
+  .menu-panel-inner {
+    padding: 2rem 1.5rem;
+  }
+  .menu-nav {
     display: flex;
-    justify-content: space-between;
-    align-items: center;
+    flex-direction: column;
+    gap: 0.6rem;
   }
+  .menu-link {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 1.05rem;
+    color: var(--color-text);
+    border-bottom: none;
+    padding: 0.5rem 0;
+  }
+  .menu-link:hover {
+    color: var(--color-accent);
+    border-bottom: none;
+  }
+
+  /* === 遮罩层 === */
+  .menu-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.3);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.28s;
+    z-index: 1000;
+    /* 桌面端不显示 */
+    display: none;
+  }
+
+  /* === 菜单打开状态 === */
+  body.menu-open {
+    overflow: hidden;
+  }
+  body.menu-open .page-wrapper {
+    transform: translateX(-220px);
+  }
+  body.menu-open .menu-panel {
+    transform: translateX(0);
+  }
+  body.menu-open .menu-overlay {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  /* === 菜单按钮 === */
+  .menu-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: none;
+    border: none;
+    color: var(--color-text);
+    cursor: pointer;
+    padding: 0.25rem;
+    border-radius: 4px;
+  }
+  .menu-toggle:hover {
+    color: var(--color-accent);
+  }
+  /* 默认显示 ≡，隐藏 ✕ */
+  .menu-toggle .icon-close {
+    display: none;
+  }
+  body.menu-open .menu-toggle .icon-menu {
+    display: none;
+  }
+  body.menu-open .menu-toggle .icon-close {
+    display: inline;
+  }
+
+  /* === 主题切换按钮 === */
+  .theme-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: none;
+    border: none;
+    color: var(--color-muted);
+    cursor: pointer;
+    padding: 0.25rem;
+    border-radius: 4px;
+    transition: color 0.2s;
+  }
+  .theme-toggle:hover {
+    color: var(--color-accent);
+  }
+  .theme-toggle .icon-dark {
+    display: none;
+  }
+  :root[data-theme="dark"] .theme-toggle .icon-light {
+    display: none;
+  }
+  :root[data-theme="dark"] .theme-toggle .icon-dark {
+    display: inline;
+  }
+  .sidebar .theme-toggle {
+    margin-top: 1rem;
+  }
+  .topbar-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  /* === 布局 === */
+  .layout {
+    display: flex;
+    max-width: calc(var(--sidebar-width) + var(--content-max-width) + 4rem);
+    margin: 0 auto;
+    padding: 2rem 1.5rem 4rem;
+    gap: 2rem;
+  }
+
+  .sidebar {
+    width: var(--sidebar-width);
+    flex-shrink: 0;
+    position: sticky;
+    top: 2rem;
+    align-self: flex-start;
+  }
+
   .site-title {
     font-weight: 700;
-    font-size: 1.1rem;
+    font-size: 1.15rem;
     border-bottom: none;
     color: var(--color-text);
+    display: block;
+    margin-bottom: 1rem;
   }
   .site-title:hover {
     color: var(--color-accent);
     border-bottom: none;
   }
-  .nav-links a {
+
+  .sidebar-nav {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+  }
+  .sidebar-nav a {
     font-size: 0.95rem;
-    margin-left: 1.2rem;
+    color: var(--color-muted);
+    border-bottom: none;
+    padding: 0.25em 0;
+  }
+  .sidebar-nav a:hover {
+    color: var(--color-accent);
+    border-bottom: none;
+  }
+
+  .main-content {
+    flex: 1;
+    min-width: 0;
+  }
+
+  /* 窄屏顶部导航条：默认隐藏 */
+  .mobile-topbar {
+    display: none;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--color-border);
+  }
+  .mobile-topbar .site-title {
+    margin-bottom: 0;
+  }
+
+  /* 窄屏：隐藏侧栏，显示顶部条，启用菜单面板 */
+  @media (max-width: 750px) {
+    .layout {
+      flex-direction: column;
+      gap: 0;
+    }
+    .sidebar {
+      display: none;
+    }
+    .main-content {
+      min-width: 0;
+    }
+    .mobile-topbar {
+      display: flex;
+    }
+    .menu-panel[hidden] {
+      display: block;
+    }
+    .menu-overlay[hidden] {
+      display: block;
+    }
   }
 </style>

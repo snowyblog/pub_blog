@@ -2,7 +2,7 @@
 
 /* CSS 变量：后续暗色模式只需覆盖这些值 */
 :root {
-  --color-bg: #fefefe;
+  --color-bg: #f6f6f6;
   --color-text: #1a1a1a;
   --color-muted: #6b6b6b;
   --color-accent: #2563eb;
@@ -11,6 +11,8 @@
   --font-sans: "Segoe UI", "PingFang SC", "Microsoft YaHei", system-ui, -apple-system, sans-serif;
   --font-mono: "Cascadia Code", "Fira Code", "JetBrains Mono", Consolas, monospace;
   --max-width: 720px;
+  --sidebar-width: 200px;
+  --content-max-width: 800px;
   --line-height: 1.75;
 }
 
@@ -33,9 +35,29 @@ body {
   line-height: var(--line-height);
   color: var(--color-text);
   background: var(--color-bg);
-  max-width: var(--max-width);
-  margin: 0 auto;
-  padding: 2rem 1.5rem 4rem;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+/* 系统深色模式（仅在无手动偏好时生效） */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) {
+    --color-bg: #1a1a1a;
+    --color-text: #e8e8e8;
+    --color-muted: #9a9a9a;
+    --color-accent: #60a5fa;
+    --color-border: #333;
+    --color-code-bg: #2a2a2a;
+  }
+}
+
+/* 手动深色模式 */
+:root[data-theme="dark"] {
+  --color-bg: #1a1a1a;
+  --color-text: #e8e8e8;
+  --color-muted: #9a9a9a;
+  --color-accent: #60a5fa;
+  --color-border: #333;
+  --color-code-bg: #2a2a2a;
 }
 
 /* 排版 */
@@ -46,7 +68,7 @@ h1, h2, h3, h4, h5, h6 {
   margin-bottom: 0.4em;
 }
 
-h1 { font-size: 1.8rem; }
+h1 { font-size: 1.6rem; }
 h2 { font-size: 1.4rem; }
 h3 { font-size: 1.15rem; }
 

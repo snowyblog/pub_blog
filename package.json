@@ -14,8 +14,11 @@
   "dependencies": {
     "@astrojs/cloudflare": "^13.7.0",
     "@astrojs/mdx": "^6.0.3",
+    "@astrojs/preact": "^5.1.5",
     "@astrojs/rss": "^4.0.18",
     "@astrojs/sitemap": "^3.7.3",
-    "astro": "^6.4.6"
+    "@lucide/astro": "^1.21.0",
+    "astro": "^6.4.6",
+    "preact": "^10.29.2"
   }
 }

@@ -3,6 +3,7 @@
 // 根据 frontmatter 中的 slug 匹配文章，渲染 MDX 正文
 import { getCollection, render } from "astro:content";
 import BaseLayout from "../layouts/Base.astro";
+import TocSidebar from "../components/TocSidebar.astro";
 
 export async function getStaticPaths() {
   // 只生成非草稿文章的页面
@@ -15,7 +16,7 @@ export async function getStaticPaths() {
 
 const { post } = Astro.props;
 const { title, date, tags, description } = post.data;
-const { Content } = await render(post);
+const { Content, headings } = await render(post);
 
 // 获取上一篇和下一篇（用于文章底部导航）
 const allPublished = (await getCollection("blog", ({ data }) => !data.draft))
@@ -32,6 +33,7 @@ const nextPost = currentIndex > 0 ? allPublished[currentIndex - 1] : null;
 ---
 
 <BaseLayout title={title} description={description}>
+  <TocSidebar headings={headings} slot="sidebar" />
   <article class="post-detail">
     <header class="post-header">
       <h1>{title}</h1>

@@ -4,6 +4,8 @@ import mdx from "@astrojs/mdx";
 import sitemap from "@astrojs/sitemap";
 import cloudflare from "@astrojs/cloudflare";
 
+import preact from "@astrojs/preact";
+
 // https://astro.build/config
 export default defineConfig({
   // Astro v6 中 static 默认即 hybrid 行为：
@@ -16,13 +18,14 @@ export default defineConfig({
   }),
   // 部署后替换为你的 CF Pages 域名
   site: "https://pub-blog.pages.dev",
-  integrations: [
-    mdx({
-      syntaxHighlight: "shiki",
-      shikiConfig: {
-        theme: "github-light",
+  integrations: [mdx({
+    syntaxHighlight: "shiki",
+    shikiConfig: {
+      themes: {
+        light: "github-light",
+        dark: "github-dark",
       },
-    }),
-    sitemap(),
-  ],
+      defaultColor: "light",
+    },
+  }), sitemap(), preact()],
 });

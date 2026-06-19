@@ -1,0 +1,103 @@
+---
+// TocSidebar.astro — MDX 标题大纲导航，含滚动监听高亮
+export interface Props {
+  headings: Array<{ depth: number; text: string; slug: string }>;
+}
+
+const { headings } = Astro.props;
+// 只展示 h2 和 h3
+const toc = headings.filter((h) => h.depth >= 2 && h.depth <= 3);
+---
+
+{
+  toc.length > 0 && (
+    <nav class="toc">
+      <div class="toc-title">目录</div>
+      <ul>
+        {toc.map((h) => (
+          <li class={`toc-item toc-depth-${h.depth}`}>
+            <a href={`#${h.slug}`} data-toc-link={h.slug}>{h.text}</a>
+          </li>
+        ))}
+      </ul>
+    </nav>
+  )
+}
+
+<script>
+  // 滚动监听：高亮当前可视区域的标题
+  function initTocSpy() {
+    const links = document.querySelectorAll<HTMLAnchorElement>("[data-toc-link]");
+    if (links.length === 0) return;
+
+    const headingIds = Array.from(links).map((a) => a.dataset.tocLink!);
+    const headingEls = headingIds
+      .map((id) => document.getElementById(id))
+      .filter(Boolean) as HTMLElement[];
+
+    if (headingEls.length === 0) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        // 找到第一个可见的标题
+        const visible = entries
+          .filter((e) => e.isIntersecting)
+          .sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top);
+
+        if (visible.length > 0) {
+          const id = visible[0].target.id;
+          links.forEach((a) => {
+            a.classList.toggle("toc-active", a.dataset.tocLink === id);
+          });
+        }
+      },
+      { rootMargin: "-80px 0px -60% 0px", threshold: 0 }
+    );
+
+    headingEls.forEach((el) => observer.observe(el));
+  }
+
+  // 页面加载和 Astro 导航完成后都初始化
+  initTocSpy();
+  document.addEventListener("astro:page-load", initTocSpy);
+</script>
+
+<style>
+  .toc {
+    font-size: 0.88rem;
+  }
+  .toc-title {
+    font-weight: 600;
+    color: var(--color-text);
+    margin-bottom: 0.6rem;
+    font-size: 0.9rem;
+  }
+  .toc ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+  .toc-item {
+    margin-bottom: 0;
+    line-height: 1.6;
+  }
+  .toc-item a {
+    display: block;
+    color: var(--color-muted);
+    border-bottom: none;
+    padding: 0.15em 0;
+    transition: color 0.15s;
+  }
+  .toc-item a:hover,
+  .toc-item a.toc-active {
+    color: var(--color-accent);
+    border-bottom: none;
+  }
+  .toc-depth-2 a {
+    padding-left: 0;
+  }
+  .toc-depth-3 a {
+    padding-left: 1em;
+    font-size: 0.85rem;
+  }
+</style>
