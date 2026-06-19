@@ -1,0 +1,145 @@
+---
+---
+
+<script is:inline>
+  const LANGUAGE_LABELS = {
+    js: "JavaScript",
+    jsx: "JSX",
+    ts: "TypeScript",
+    tsx: "TSX",
+    html: "HTML",
+    css: "CSS",
+    scss: "SCSS",
+    json: "JSON",
+    yaml: "YAML",
+    yml: "YAML",
+    md: "Markdown",
+    mdx: "MDX",
+    bash: "Bash",
+    sh: "Shell",
+    shell: "Shell",
+    shellscript: "Shell",
+    diff: "Diff",
+    plaintext: "Plain Text",
+    text: "Plain Text",
+  };
+
+  function formatLanguage(language) {
+    const normalized = (language || "text").trim().toLowerCase();
+    if (LANGUAGE_LABELS[normalized]) {
+      return LANGUAGE_LABELS[normalized];
+    }
+
+    if (normalized.length <= 5) {
+      return normalized.toUpperCase();
+    }
+
+    return normalized;
+  }
+
+  function readCode(pre) {
+    const lines = Array.from(pre.querySelectorAll(":scope > code > .line"));
+    if (lines.length === 0) {
+      return (pre.textContent || "").trimEnd();
+    }
+
+    return lines.map((line) => line.textContent || "").join("\n").trimEnd();
+  }
+
+  function fallbackCopy(text) {
+    const textarea = document.createElement("textarea");
+    textarea.value = text;
+    textarea.setAttribute("readonly", "");
+    textarea.style.position = "fixed";
+    textarea.style.top = "-9999px";
+    textarea.style.left = "-9999px";
+    document.body.appendChild(textarea);
+    textarea.select();
+
+    const copied = document.execCommand("copy");
+    textarea.remove();
+    return copied;
+  }
+
+  async function copyCode(text) {
+    if (navigator.clipboard?.writeText) {
+      try {
+        await navigator.clipboard.writeText(text);
+        return true;
+      } catch {
+        // 某些预览环境会禁掉 Clipboard API
+      }
+    }
+
+    return fallbackCopy(text);
+  }
+
+  function createCopyButton(pre, languageLabel) {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "code-block__copy";
+    button.textContent = "复制";
+    button.setAttribute("aria-label", `复制 ${languageLabel} 代码`);
+
+    button.addEventListener("click", async () => {
+      const originalLabel = button.textContent || "复制";
+
+      try {
+        const copied = await copyCode(readCode(pre));
+        if (!copied) {
+          throw new Error("copy failed");
+        }
+
+        button.textContent = "已复制";
+        button.dataset.state = "copied";
+      } catch {
+        button.textContent = "复制失败";
+        button.dataset.state = "error";
+      }
+
+      window.setTimeout(() => {
+        button.textContent = originalLabel;
+        delete button.dataset.state;
+      }, 1800);
+    });
+
+    return button;
+  }
+
+  function enhanceCodeBlock(pre) {
+    if (pre.dataset.enhanced === "true") {
+      return;
+    }
+
+    const languageLabel = formatLanguage(pre.dataset.language);
+    const wrapper = document.createElement("div");
+    wrapper.className = "code-block";
+
+    const header = document.createElement("div");
+    header.className = "code-block__header";
+
+    const language = document.createElement("span");
+    language.className = "code-block__language";
+    language.textContent = languageLabel;
+
+    header.append(language, createCopyButton(pre, languageLabel));
+
+    pre.parentNode?.insertBefore(wrapper, pre);
+    wrapper.append(header, pre);
+    pre.dataset.enhanced = "true";
+  }
+
+  function enhanceCodeBlocks() {
+    document.querySelectorAll("pre.astro-code").forEach((pre) => {
+      enhanceCodeBlock(pre);
+    });
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", enhanceCodeBlocks, { once: true });
+  } else {
+    enhanceCodeBlocks();
+  }
+
+  document.addEventListener("astro:page-load", enhanceCodeBlocks);
+</script>
