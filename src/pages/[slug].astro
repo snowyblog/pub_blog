@@ -6,7 +6,7 @@ import BaseLayout from "../layouts/Base.astro";
 import TocSidebar from "../components/TocSidebar.astro";
 
 export async function getStaticPaths() {
-  // 只生成非草稿文章的页面
+  // 只生成非草稿、非隐藏文章的页面
   const posts = await getCollection("blog", ({ data }) => !data.draft);
   return posts.map((post) => ({
     params: { slug: post.data.slug },
@@ -19,11 +19,12 @@ const { title, date, tags, description } = post.data;
 const { Content, headings } = await render(post);
 
 // 获取上一篇和下一篇（用于文章底部导航）
-const allPublished = (await getCollection("blog", ({ data }) => !data.draft))
-  .sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf());
+const allPublished = (
+  await getCollection("blog", ({ data }) => !data.draft && !data.hidden)
+).sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf());
 
 const currentIndex = allPublished.findIndex(
-  (p) => p.data.slug === post.data.slug
+  (p) => p.data.slug === post.data.slug,
 );
 const prevPost =
   currentIndex < allPublished.length - 1
@@ -39,18 +40,24 @@ const nextPost = currentIndex > 0 ? allPublished[currentIndex - 1] : null;
       <h1>{title}</h1>
       <div class="meta">
         <time datetime={date.toISOString()}>
-          {date.toLocaleDateString("zh-CN", {
-            year: "numeric",
-            month: "2-digit",
-            day: "2-digit",
-          })}
+          {
+            date.toLocaleDateString("zh-CN", {
+              year: "numeric",
+              month: "2-digit",
+              day: "2-digit",
+            })
+          }
         </time>
-        {tags.length > 0 && (
-          <span class="tags-inline">
-            {" · "}
-            {tags.map((tag) => <span class="tag">#{tag} </span>)}
-          </span>
-        )}
+        {
+          tags.length > 0 && (
+            <span class="tags-inline">
+              {" · "}
+              {tags.map((tag) => (
+                <span class="tag">#{tag} </span>
+              ))}
+            </span>
+          )
+        }
       </div>
     </header>
 
@@ -62,18 +69,22 @@ const nextPost = currentIndex > 0 ? allPublished[currentIndex - 1] : null;
       <hr />
       <nav class="post-nav">
         <div>
-          {prevPost && (
-            <a href={`/${prevPost.data.slug}`} class="prev-link">
-              ← {prevPost.data.title}
-            </a>
-          )}
+          {
+            prevPost && (
+              <a href={`/${prevPost.data.slug}`} class="prev-link">
+                ← {prevPost.data.title}
+              </a>
+            )
+          }
         </div>
         <div>
-          {nextPost && (
-            <a href={`/${nextPost.data.slug}`} class="next-link">
-              {nextPost.data.title} →
-            </a>
-          )}
+          {
+            nextPost && (
+              <a href={`/${nextPost.data.slug}`} class="next-link">
+                {nextPost.data.title} →
+              </a>
+            )
+          }
         </div>
       </nav>
     </footer>

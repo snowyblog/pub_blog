@@ -1,3 +1,7 @@
 [submodule "src/content/blog"]
 	path = src/content/blog
 	url = https://github.com/snowyblog/pri_blog.git
+[submodule "src/data/friends"]
+	path = src/data/friends
+	url = https://github.com/snowyblog/friends
+	branch = main

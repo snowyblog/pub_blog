@@ -25,11 +25,13 @@ const description = Astro.props.description ?? "雪的日记";
     <title>{title}</title>
     <meta name="description" content={description} />
     <script is:inline>
-      (function() {
-        var saved = localStorage.getItem('theme');
-        var prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-        var theme = saved || (prefersDark ? 'dark' : 'light');
-        document.documentElement.setAttribute('data-theme', theme);
+      (function () {
+        var saved = localStorage.getItem("theme");
+        var prefersDark = window.matchMedia(
+          "(prefers-color-scheme: dark)",
+        ).matches;
+        var theme = saved || (prefersDark ? "dark" : "light");
+        document.documentElement.setAttribute("data-theme", theme);
         document.documentElement.classList.add(theme);
       })();
     </script>
@@ -40,6 +42,7 @@ const description = Astro.props.description ?? "雪的日记";
       <div class="menu-panel-inner">
         <nav class="menu-nav">
           <a href="/" class="menu-link">首页</a>
+          <a href="/friends" class="menu-link">友链</a>
           <a href="/rss.xml" class="menu-link">
             <span>RSS 订阅</span>
             <Rss size={16} />
@@ -58,7 +61,11 @@ const description = Astro.props.description ?? "雪的日记";
         <aside class="sidebar">
           <div class="sidebar-top">
             <a href="/" class="site-title">雪的日记</a>
-            <button class="theme-toggle" id="theme-toggle-sidebar" aria-label="切换深色模式">
+            <button
+              class="theme-toggle"
+              id="theme-toggle-sidebar"
+              aria-label="切换深色模式"
+            >
               <span class="icon-light"><Sun size={18} /></span>
               <span class="icon-dark"><Moon size={18} /></span>
             </button>
@@ -67,6 +74,8 @@ const description = Astro.props.description ?? "雪的日记";
             <!-- 默认导航，文章页可替换为 TOC -->
             <nav class="sidebar-nav">
               <a href="/">首页</a>
+              <a href="/friends">友链</a>
+              <a href="/about">关于</a>
               <a href="/rss.xml">RSS</a>
             </nav>
           </slot>
@@ -78,11 +87,19 @@ const description = Astro.props.description ?? "雪的日记";
           <header class="mobile-topbar">
             <a href="/" class="site-title">雪的日记</a>
             <div class="topbar-actions">
-              <button class="theme-toggle" id="theme-toggle-mobile" aria-label="切换深色模式">
+              <button
+                class="theme-toggle"
+                id="theme-toggle-mobile"
+                aria-label="切换深色模式"
+              >
                 <span class="icon-light"><Sun size={18} /></span>
                 <span class="icon-dark"><Moon size={18} /></span>
               </button>
-              <button class="menu-toggle" id="menu-toggle" aria-label="打开菜单">
+              <button
+                class="menu-toggle"
+                id="menu-toggle"
+                aria-label="打开菜单"
+              >
                 <span class="icon-menu"><Menu size={22} /></span>
                 <span class="icon-close"><X size={22} /></span>
               </button>
@@ -140,11 +157,13 @@ const description = Astro.props.description ?? "雪的日记";
     });
   });
 
-  window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", function (e) {
-    if (!localStorage.getItem("theme")) {
-      setTheme(e.matches ? "dark" : "light");
-    }
-  });
+  window
+    .matchMedia("(prefers-color-scheme: dark)")
+    .addEventListener("change", function (e) {
+      if (!localStorage.getItem("theme")) {
+        setTheme(e.matches ? "dark" : "light");
+      }
+    });
 </script>
 
 <style>

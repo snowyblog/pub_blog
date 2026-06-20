@@ -19,6 +19,7 @@
     "@astrojs/sitemap": "^3.7.3",
     "@lucide/astro": "^1.21.0",
     "astro": "^6.4.6",
-    "preact": "^10.29.2"
+    "preact": "^10.29.2",
+    "yaml": "^2.9.0"
   }
 }
