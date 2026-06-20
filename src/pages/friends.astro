@@ -1,0 +1,151 @@
+---
+// friends.astro — 友情链接页
+// 通过 import.meta.glob 在构建时加载 YAML 文件，避免 node:fs 导致的 CF Pages 兼容问题
+import { parse as parseYaml } from "yaml";
+import BaseLayout from "../layouts/Base.astro";
+
+interface FriendLink {
+  name: string;
+  description: string;
+  url: string;
+  icon: string;
+}
+
+// 使用 Vite 的 glob import 以 raw 模式读取所有 yaml/yml 文件
+const yamlModules = import.meta.glob<{ default: string }>(
+  "../data/friends/links/**/*.{yaml,yml}",
+  { query: "?raw", import: "default" },
+);
+
+const links: FriendLink[] = [];
+
+for (const [filePath, loader] of Object.entries(yamlModules)) {
+  try {
+    const content = await loader();
+    const data = parseYaml(content) as FriendLink;
+    if (data && data.name && data.url) {
+      links.push({
+        name: String(data.name),
+        description: String(data.description ?? ""),
+        url: String(data.url),
+        icon: String(data.icon ?? ""),
+      });
+    }
+  } catch {
+    // 跳过解析失败的文件
+  }
+}
+---
+
+<BaseLayout title="友情链接 — 雪的日记" description="友情链接">
+  <div class="friends-page">
+    <h1 class="page-title">友链</h1>
+    <p class="page-desc">欢迎交换友链，<a
+        href="https://github.com/snowyblog/friends/issues/new?template=friend-link.yml"
+        target="_blank"
+        rel="noopener">点此提交</a
+      >你的博客。</p>
+
+    {
+      links.length === 0 ? (
+        <p class="empty">暂无友链</p>
+      ) : (
+        <div class="friends-grid">
+          {links.map((link) => (
+            <a
+              href={link.url}
+              target="_blank"
+              rel="noopener"
+              class="friend-card"
+            >
+              <img
+                src={link.icon}
+                alt={link.name}
+                class="friend-icon"
+                loading="lazy"
+              />
+              <div class="friend-info">
+                <span class="friend-name">{link.name}</span>
+                <span class="friend-desc">{link.description}</span>
+              </div>
+            </a>
+          ))}
+        </div>
+      )
+    }
+  </div>
+</BaseLayout>
+
+<style>
+  .page-title {
+    margin-top: 0;
+    margin-bottom: 0.3rem;
+  }
+
+  .page-desc {
+    color: var(--color-muted);
+    font-size: 0.95rem;
+    margin-bottom: 2rem;
+  }
+
+  .empty {
+    color: var(--color-muted);
+    text-align: center;
+    margin-top: 4rem;
+    font-size: 1.1rem;
+  }
+
+  .friends-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1rem;
+  }
+
+  .friend-card {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem;
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    transition: border-color 0.2s, background-color 0.2s;
+    text-decoration: none;
+    color: var(--color-text);
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .friend-card:hover {
+    border-color: var(--color-accent);
+    background-color: rgba(37, 99, 235, 0.04);
+    border-bottom: 1px solid var(--color-accent);
+  }
+
+  .friend-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    object-fit: cover;
+    flex-shrink: 0;
+    background: var(--color-border);
+  }
+
+  .friend-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+    min-width: 0;
+  }
+
+  .friend-name {
+    font-weight: 600;
+    font-size: 1rem;
+  }
+
+  .friend-desc {
+    color: var(--color-muted);
+    font-size: 0.85rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+</style>
