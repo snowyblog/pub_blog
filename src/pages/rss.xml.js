@@ -8,8 +8,8 @@ export async function GET() {
 
   return rss({
     title: "Blog",
-    description: "一个极简博客",
-    site: "https://pub-blog.pages.dev",
+    description: "雪的日记",
+    site: "https://blog.snowptr.top",
     items: posts.map((post) => ({
       title: post.data.title,
       link: `/${post.data.slug}`,
