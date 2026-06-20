@@ -9,10 +9,11 @@ interface FriendLink {
   description: string;
   url: string;
   icon: string;
+  self: boolean;
 }
 
 // 使用 Vite 的 glob import 以 raw 模式读取所有 yaml/yml 文件
-const yamlModules = import.meta.glob<{ default: string }>(
+const yamlModules = import.meta.glob<string>(
   "../data/friends/links/**/*.{yaml,yml}",
   { query: "?raw", import: "default" },
 );
@@ -29,12 +30,16 @@ for (const [filePath, loader] of Object.entries(yamlModules)) {
         description: String(data.description ?? ""),
         url: String(data.url),
         icon: String(data.icon ?? ""),
+        self: Boolean(data.self ?? false),
       });
     }
   } catch {
     // 跳过解析失败的文件
   }
 }
+
+// 自己的链接排在最前面
+links.sort((a, b) => (a.self === b.self ? 0 : a.self ? -1 : 1));
 ---
 
 <BaseLayout title="友情链接 — 雪的日记" description="友情链接">
