@@ -358,3 +358,10 @@ th {
   background: var(--color-code-bg);
   font-weight: 600;
 }
+
+/* === KaTeX 复制修复 === */
+/* .base 是 display:inline-block，浏览器复制时会在 inline-block 元素之间
+   插入换行，导致 "I\nt\n=\nq" 的效果。改为 inline 修复此问题。 */
+.katex .base {
+  display: inline !important;
+}
