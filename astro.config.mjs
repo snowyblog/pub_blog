@@ -3,8 +3,11 @@ import { defineConfig, sessionDrivers } from "astro/config";
 import mdx from "@astrojs/mdx";
 import sitemap from "@astrojs/sitemap";
 import cloudflare from "@astrojs/cloudflare";
+import remarkMath from "remark-math";
+import rehypeKatex from "rehype-katex";
 
 import preact from "@astrojs/preact";
+import { remarkContainer } from "./src/plugins/remark-container.mjs";
 
 // https://astro.build/config
 export default defineConfig({
@@ -13,16 +16,16 @@ export default defineConfig({
   output: "static",
   // 部署到 Cloudflare Pages（D1 / KV 绑定后续按需添加）
   adapter: cloudflare({
-    // 图片在构建时预处理，不依赖 CF Images 绑定
     imageService: "compile",
   }),
-  // 用 LRU 内存驱动占位，避免适配器自动添加 KV 绑定
   session: {
     driver: sessionDrivers.lruCache(),
   },
-  // 部署后替换为你的 CF Pages 域名
+
   site: "https://blog.snowptr.top",
   integrations: [mdx({
+    remarkPlugins: [remarkMath, remarkContainer],
+    rehypePlugins: [rehypeKatex],
     syntaxHighlight: "shiki",
     shikiConfig: {
       themes: {

@@ -1,0 +1,333 @@
+---
+// CodeGroupTabs — 将 :::group 内的多个代码块聚合为可切换标签页
+// 标签配置从 div[data-code-group] JSON 读取（remark-container 写入）
+// 行为：
+//   - 水平标签栏 + 溢出项自动收入 "…" 下拉按钮
+//   - 长标签截断为 "abc...xyz"
+//   - 下拉菜单用自定义 popover 替代原生 select
+---
+
+<script is:inline>
+  const LABEL_MAX_LEN = 18;
+
+  function htmlDecode(str) {
+    const txt = document.createElement("textarea");
+    txt.innerHTML = str;
+    return txt.value;
+  }
+
+  function truncateLabel(label) {
+    if (label.length <= LABEL_MAX_LEN) return label;
+    return label.slice(0, 3) + "..." + label.slice(-3);
+  }
+
+  function readCode(pre) {
+    const lines = Array.from(pre.querySelectorAll(":scope > code > .line"));
+    if (lines.length === 0) return (pre.textContent || "").trimEnd();
+    return lines.map((l) => l.textContent || "").join("\n").trimEnd();
+  }
+
+  async function copyCode(text) {
+    if (navigator.clipboard?.writeText) {
+      try { await navigator.clipboard.writeText(text); return true; } catch {}
+    }
+    const ta = document.createElement("textarea");
+    ta.value = text;
+    ta.setAttribute("readonly", "");
+    ta.style.cssText = "position:fixed;top:-9999px;left:-9999px";
+    document.body.appendChild(ta);
+    ta.select();
+    const ok = document.execCommand("copy");
+    ta.remove();
+    return ok;
+  }
+
+  function enhanceGroup(group) {
+    let labels = [];
+    const raw = group.dataset.codeGroup;
+    if (raw) {
+      try { labels = JSON.parse(htmlDecode(raw)); } catch {}
+    }
+
+    const items = group.querySelectorAll(":scope > .code-block");
+    if (items.length <= 1) return;
+
+    const blocks = Array.from(items);
+    const pres = blocks.map((b) => b.querySelector("pre.astro-code"));
+
+    // ---- 移除各代码块独立顶栏 ----
+    blocks.forEach((b) => {
+      const h = b.querySelector(":scope > .code-block__header");
+      if (h) h.remove();
+    });
+
+    // ---- 构建统一顶栏 ----
+    const header = document.createElement("div");
+    header.className = "code-group__header";
+
+    // 左侧：标签栏
+    const tabBar = document.createElement("div");
+    tabBar.className = "code-group__tabs";
+    tabBar.setAttribute("role", "tablist");
+
+    // 「更多」下拉按钮（初始隐藏）
+    const moreWrap = document.createElement("div");
+    moreWrap.className = "code-group__more-wrap";
+    moreWrap.hidden = true;
+    const moreBtn = document.createElement("button");
+    moreBtn.type = "button";
+    moreBtn.className = "code-group__tab code-group__more-btn";
+    moreBtn.textContent = "…";
+    moreBtn.title = "更多文件";
+    const moreMenu = document.createElement("div");
+    moreMenu.className = "code-group__more-menu";
+    moreWrap.append(moreBtn, moreMenu);
+
+    // 复制按钮
+    const copyBtn = document.createElement("button");
+    copyBtn.type = "button";
+    copyBtn.className = "code-block__copy";
+    copyBtn.textContent = "复制";
+    copyBtn.setAttribute("aria-label", "复制代码");
+
+    let activeIndex = 0;
+
+    copyBtn.addEventListener("click", async () => {
+      const pre = pres[activeIndex];
+      if (!pre) return;
+      const ok = await copyCode(readCode(pre));
+      copyBtn.textContent = ok ? "已复制" : "复制失败";
+      copyBtn.dataset.state = ok ? "copied" : "error";
+      setTimeout(() => { copyBtn.textContent = "复制"; delete copyBtn.dataset.state; }, 1800);
+    });
+
+    /** 切换激活 tab（按钮 + 菜单项共用） */
+    function activateTab(index) {
+      activeIndex = index;
+      blocks.forEach((b, j) => (b.style.display = j === index ? "" : "none"));
+      // 更新所有 tab 按钮状态
+      tabBar.querySelectorAll(".code-group__tab").forEach((t) => {
+        t.setAttribute("aria-selected", "false");
+        t.classList.remove("code-group__tab--active");
+      });
+      moreMenu.querySelectorAll(".code-group__tab").forEach((t) => {
+        t.setAttribute("aria-selected", "false");
+        t.classList.remove("code-group__tab--active");
+      });
+      // 高亮当前
+      const allTabs = [...tabBar.querySelectorAll(".code-group__tab"), ...moreMenu.querySelectorAll(".code-group__tab")];
+      const active = allTabs.find((t) => Number(t.dataset.index) === index);
+      if (active) {
+        active.setAttribute("aria-selected", "true");
+        active.classList.add("code-group__tab--active");
+      }
+      moreMenu.classList.remove("code-group__more-menu--open");
+    }
+
+    // 创建所有 tab 按钮（先全部放 tabBar）
+    const allTabs = [];
+    blocks.forEach((block, i) => {
+      const pre = pres[i];
+      const fullLabel = labels[i] || pre?.dataset.language || "text";
+      const displayLabel = truncateLabel(fullLabel);
+
+      const tab = document.createElement("button");
+      tab.type = "button";
+      tab.className = "code-group__tab";
+      tab.textContent = displayLabel;
+      tab.title = fullLabel !== displayLabel ? fullLabel : "";
+      tab.setAttribute("role", "tab");
+      tab.setAttribute("aria-selected", i === 0 ? "true" : "false");
+      tab.dataset.index = String(i);
+
+      tab.addEventListener("click", () => activateTab(i));
+
+      tabBar.appendChild(tab);
+      allTabs.push({ el: tab, index: i, fullLabel, displayLabel });
+
+      if (i === 0) tab.classList.add("code-group__tab--active");
+    });
+
+    header.append(tabBar, moreWrap, copyBtn);
+    group.insertBefore(header, group.firstChild);
+
+    // 默认只显示第一个代码块
+    blocks.forEach((b, i) => { if (i > 0) b.style.display = "none"; });
+
+    // ---- 溢出检测：把放不下的 tab 移到「更多」菜单 ----
+    function measureOverflow() {
+      // 先把所有 tab 放回 tabBar
+      allTabs.forEach((t) => { if (t.el.parentElement !== tabBar) tabBar.appendChild(t.el); });
+
+      // 强制 layout
+      void header.offsetWidth;
+
+      const headerWidth = header.clientWidth;
+      const copyWidth = copyBtn.clientWidth;
+      const gap = 12; // gap in header
+      const moreBtnWidth = 28; // "…" 按钮大约宽度
+      const available = headerWidth - copyWidth - gap - moreBtnWidth - gap;
+
+      const overflowIndices = [];
+      let used = 0;
+
+      // 计算每个 tab 的宽度
+      allTabs.forEach((t) => {
+        const w = t.el.clientWidth + 4; // 4px 间距
+        if (used + w <= available) {
+          used += w;
+        } else {
+          overflowIndices.push(t.index);
+        }
+      });
+
+      if (overflowIndices.length === 0) {
+        moreWrap.hidden = true;
+        return;
+      }
+
+      // 移到 moreMenu
+      moreMenu.innerHTML = "";
+      overflowIndices.forEach((idx) => {
+        const t = allTabs.find((x) => x.index === idx);
+        if (!t) return;
+        t.el.classList.add("code-group__tab--in-menu");
+        t.el.setAttribute("aria-selected", idx === activeIndex ? "true" : "false");
+        if (idx === activeIndex) t.el.classList.add("code-group__tab--active");
+        moreMenu.appendChild(t.el);
+      });
+
+      moreWrap.hidden = false;
+      moreBtn.textContent = activeIndex !== -1 && overflowIndices.includes(activeIndex)
+        ? (labels[activeIndex] || pres[activeIndex]?.dataset.language || "…")
+        : "…";
+    }
+
+    // 初始测量
+    requestAnimationFrame(() => {
+      measureOverflow();
+      // 监听 resize
+      const ro = new ResizeObserver(() => measureOverflow());
+      ro.observe(header);
+    });
+
+    // 点击「更多」展开菜单
+    moreBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      moreMenu.classList.toggle("code-group__more-menu--open");
+    });
+
+    // 点击外部关闭菜单
+    document.addEventListener("click", () => {
+      moreMenu.classList.remove("code-group__more-menu--open");
+    }, { once: false });
+  }
+
+  function enhanceGroups() {
+    document.querySelectorAll(".group[data-code-group]").forEach(enhanceGroup);
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", () => setTimeout(enhanceGroups, 0), { once: true });
+  } else {
+    enhanceGroups();
+  }
+  document.addEventListener("astro:page-load", () => setTimeout(enhanceGroups, 0));
+</script>
+
+<style is:global>
+  /* ---- 统一顶栏 ---- */
+  .code-group__header {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 12px;
+    padding: 0.3rem 0.75rem;
+    background: var(--color-code-header-bg);
+    border: 1px solid var(--color-code-header-border);
+    border-bottom: none;
+    border-radius: 8px 8px 0 0;
+  }
+  .code-group__header .code-block__copy {
+    margin-left: auto;
+  }
+
+  /* ---- 标签栏 ---- */
+  .code-group__tabs {
+    display: flex;
+    gap: 0;
+    overflow: hidden;
+    flex-shrink: 1;
+    min-width: 0;
+  }
+
+  .code-group__tab {
+    padding: 0.25em 0.65em;
+    font-size: 0.75rem;
+    font-weight: 500;
+    font-family: var(--font-mono, "JetBrains Mono", monospace);
+    color: var(--color-muted);
+    background: none;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: color 0.15s, background 0.15s;
+    flex-shrink: 0;
+  }
+  .code-group__tab:hover {
+    color: var(--color-text);
+    background: rgba(128, 128, 128, 0.1);
+  }
+  .code-group__tab--active,
+  .code-group__tab[aria-selected="true"] {
+    color: var(--color-accent);
+  }
+
+  /* ---- 「更多」下拉 ---- */
+  .code-group__more-wrap {
+    position: relative;
+    flex-shrink: 0;
+  }
+  .code-group__more-btn {
+    font-weight: 700;
+    letter-spacing: 0.05em;
+  }
+  .code-group__more-menu {
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    margin-top: 4px;
+    min-width: 140px;
+    max-height: 260px;
+    overflow-y: auto;
+    background: var(--color-code-header-bg);
+    border: 1px solid var(--color-code-header-border);
+    border-radius: 6px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+    z-index: 50;
+    padding: 4px;
+  }
+  .code-group__more-menu--open {
+    display: flex;
+    flex-direction: column;
+  }
+  .code-group__tab--in-menu {
+    justify-content: flex-start;
+    text-align: left;
+    width: 100%;
+  }
+
+  /* ---- group 内部 .code-block ---- */
+  .group[data-code-group] .code-block {
+    margin-top: 0;
+    border-top: none;
+    border-radius: 0 0 8px 8px;
+  }
+
+  /* ---- 行号修复：空行 min-height 确保 counter 生效 ---- */
+  pre.astro-code .line {
+    min-height: 1.5em;
+  }
+</style>

@@ -3,6 +3,7 @@
 import "../styles/global.css";
 import { Menu, X, Rss, Sun, Moon } from "@lucide/astro";
 import CodeBlockEnhancer from "../components/CodeBlockEnhancer.astro";
+import CodeGroupTabs from "../components/CodeGroupTabs.astro";
 
 const title = Astro.props.title ?? "雪的日记";
 const description = Astro.props.description ?? "雪的日记";
@@ -21,6 +22,12 @@ const description = Astro.props.description ?? "雪的日记";
       href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap"
     />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/katex.min.css"
+      integrity="sha384-5MlYI1MBYjw4c41JKfhz2ZheUq6Cw4rW2p3BzM+0K5F8OHqX7gNpHQSwAmZEyrO"
+      crossorigin="anonymous"
+    />
     <meta name="generator" content={Astro.generator} />
     <title>{title}</title>
     <meta name="description" content={description} />
@@ -72,14 +79,12 @@ const description = Astro.props.description ?? "雪的日记";
           </div>
           <nav class="sidebar-nav">
             <a href="/">首页</a>
-          </nav>
-          <slot name="sidebar">
-            <nav class="sidebar-nav">
+            <slot name="sidebar">
               <a href="/friends">友链</a>
               <a href="/about">关于</a>
               <a href="/rss.xml">RSS</a>
-            </nav>
-          </slot>
+            </slot>
+          </nav>
         </aside>
 
         <!-- 右侧主内容区 -->
@@ -111,6 +116,7 @@ const description = Astro.props.description ?? "雪的日记";
       </div>
     </div>
     <CodeBlockEnhancer />
+    <CodeGroupTabs />
   </body>
 </html>
 

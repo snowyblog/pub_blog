@@ -6,7 +6,6 @@ import BaseLayout from "../layouts/Base.astro";
 import TocSidebar from "../components/TocSidebar.astro";
 
 export async function getStaticPaths() {
-  // 只生成非草稿、非隐藏文章的页面
   const posts = await getCollection("blog", ({ data }) => !data.draft);
   return posts.map((post) => ({
     params: { slug: post.data.slug },
@@ -18,19 +17,23 @@ const { post } = Astro.props;
 const { title, date, tags, description } = post.data;
 const { Content, headings } = await render(post);
 
-// 获取上一篇和下一篇（用于文章底部导航）
 const allPublished = (
   await getCollection("blog", ({ data }) => !data.draft && !data.hidden)
 ).sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf());
 
-const currentIndex = allPublished.findIndex(
-  (p) => p.data.slug === post.data.slug,
-);
-const prevPost =
-  currentIndex < allPublished.length - 1
-    ? allPublished[currentIndex + 1]
-    : null;
-const nextPost = currentIndex > 0 ? allPublished[currentIndex - 1] : null;
+const recommendEnabled = post.data.recommend !== false;
+const firstTag = tags.length > 0 ? tags[0] : null;
+const relatedPosts =
+  recommendEnabled && firstTag
+    ? allPublished
+        .filter(
+          (p) =>
+            p.data.slug !== post.data.slug &&
+            p.data.tags?.includes(firstTag) &&
+            p.data.date <= date,
+        )
+        .slice(0, 3)
+    : [];
 ---
 
 <BaseLayout title={title} description={description}>
@@ -66,27 +69,23 @@ const nextPost = currentIndex > 0 ? allPublished[currentIndex - 1] : null;
     </div>
 
     <footer class="post-footer">
-      <hr />
-      <nav class="post-nav">
-        <div>
-          {
-            prevPost && (
-              <a href={`/${prevPost.data.slug}`} class="prev-link">
-                ← {prevPost.data.title}
-              </a>
-            )
-          }
-        </div>
-        <div>
-          {
-            nextPost && (
-              <a href={`/${nextPost.data.slug}`} class="next-link">
-                {nextPost.data.title} →
-              </a>
-            )
-          }
-        </div>
-      </nav>
+      {
+        relatedPosts.length > 0 && (
+          <>
+            <hr />
+            <nav class="post-nav">
+              <span class="related-label">相关推荐</span>
+              <ul>
+                {relatedPosts.map((p) => (
+                  <li>
+                    <a href={`/${p.data.slug}`}>{p.data.title}</a>
+                  </li>
+                ))}
+              </ul>
+            </nav>
+          </>
+        )
+      }
     </footer>
   </article>
 </BaseLayout>
@@ -109,9 +108,6 @@ const nextPost = currentIndex > 0 ? allPublished[currentIndex - 1] : null;
     margin-top: 3rem;
   }
   .post-nav {
-    display: flex;
-    justify-content: space-between;
-    gap: 1rem;
     font-size: 0.95rem;
   }
   .post-nav a {
@@ -123,5 +119,17 @@ const nextPost = currentIndex > 0 ? allPublished[currentIndex - 1] : null;
   .tag {
     color: var(--color-muted);
     font-size: 0.85rem;
+  }
+  .related-label {
+    color: var(--color-muted);
+    font-size: 0.85rem;
+  }
+  .post-nav ul {
+    list-style: none;
+    padding: 0;
+    margin: 0.5rem 0 0;
+  }
+  .post-nav li {
+    margin-bottom: 0.3rem;
   }
 </style>
